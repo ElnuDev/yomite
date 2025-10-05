@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="darkreader-lock">
+    <title>yomite</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='missing.css') }}">
+    <script src="{{ url_for('static', filename='htmx.min.js') }}"></script>
+</head>
+<body>
+    <main>
+        <details style="background: none; border: none; padding: 0">
+            <summary style="user-select: none">
+                Settings
+                <button id="reselectArea" class="float:right">Reselect area</button>
+                <label style="display: inline-flex; float: right">
+                    Live?
+                    <input id="autoRefresh" role="switch" type="checkbox" autocomplete="off" checked>
+                    &nbsp;
+                </label>
+            </summary>
+            <p>Ensure that the text in the second adjusted image is clearly legible without any background silhouettes visible. Text should be black on white.</p>
+            <form hx-post="/settings" hx-trigger="input" hx-swap="none">
+                <label>
+                    Invert?
+                    <input
+                        name="invert"
+                        role="switch"
+                        type="checkbox"
+                        autocomplete="off"
+                        {%- if invert %} checked{% endif %}>
+                </label>
+                <label>
+                    Threshold&nbsp;
+                    <input
+                        style="width: auto"
+                        name="threshold"
+                        type="range"
+                        min="0"
+                        max="255"
+                        value="{{ threshold }}"
+                        oninput="this.nextElementSibling.value = this.value"
+                        autocomplete="off">
+                    <output>{{ threshold }}</output>
+                </label>
+            </form>
+            <img src="/image" alt="grabbed image" id="grabbed" class="block margin-inline:auto">
+            <img src="/adjusted" alt="adjusted image" id="adjusted" class="block margin-inline:auto">
+            <hr>
+        </details>
+        <br>
+        <br>
+        <div id="grab">{{ grab }}</div>
+        <script src="{{ url_for('static', filename='script.js') }}"></script>
+    </main>
+</body>
+</html>

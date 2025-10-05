@@ -7,7 +7,7 @@ import os
 import traceback
 import logging
 from PIL import Image, ImageGrab, ImageOps
-from flask import Flask, render_template, send_file
+from flask import Flask, render_template, send_file, make_response, request
 from werkzeug.serving import make_server
 
 def get_area():
@@ -29,6 +29,10 @@ image = None
 adjusted = None
 text = ""
 
+# settings
+invert = True
+threshold = 150
+
 app = Flask(__name__)
 
 def grab():
@@ -49,10 +53,11 @@ def grab():
             os.remove(TEMP)
 
     # https://stackoverflow.com/a/50090612
-    thresh = 150
-    fn = lambda x : 255 if x > thresh else 0
+    fn = lambda x : 255 if x > threshold else 0
     global adjusted
-    adjusted = ImageOps.invert(image.convert("L").point(fn, mode="1"))
+    adjusted = image.convert("L").point(fn, mode="1")
+    if invert:
+        adjusted = ImageOps.invert(adjusted)
 
     global text
     # various corrections for inconsistencies in tesseract's output
@@ -81,14 +86,27 @@ def start_grab_thread():
 
 @app.route("/")
 def get_index():
-    return render_template("index.html", grab=text)
+    return render_template(
+        "index.html.jinja",
+        grab=text,
+        invert=invert,
+        threshold=threshold
+    )
 
 def image_response(image):
+    if image == None:
+        resp = make_response(('', 503))
+        resp.headers["Retry-After"] = "1"
+        return resp
+
     buf = io.BytesIO()
     image.save(buf, format="PNG")
     buf.seek(0)
 
-    return send_file(buf, mimetype="image/png")
+    resp = send_file(buf, mimetype="image/png")
+    # https://stackoverflow.com/a/22429796
+    resp.headers["Cache-Control"] = "max-age=0,must-revalidate"
+    return resp
 
 @app.route("/image")
 def get_image():
@@ -107,6 +125,16 @@ def get_reselect_area():
 @app.route("/text")
 def get_text():
     return text
+
+@app.route("/settings", methods=["POST"])
+def post_settings():
+    global invert, threshold
+    invert = request.form.get("invert") == "on"
+    try:
+        threshold = max(0, min(int(request.form.get("threshold")), 255))
+    except:
+        pass
+    return ('', 204)
 
 def main():
     start_grab_thread()
