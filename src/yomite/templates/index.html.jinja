@@ -22,8 +22,8 @@
             </summary>
             <p>Ensure that the text in the second adjusted image is clearly legible without any background silhouettes visible. Text should be black on white.</p>
             <form hx-post="/settings" hx-trigger="input" hx-swap="none">
-                <label class="block">
-                    Invert?
+                <label class="block" style="gap: 0">
+                    {% set style = "display: inline-block; width: 6em" %}<span style="{{ style }}">Invert?</span>
                     <input
                         name="invert"
                         role="switch"
@@ -32,7 +32,7 @@
                         {%- if invert %} checked{% endif %}>
                 </label>
                 <label class="block">
-                    Threshold&nbsp;
+                    <span style="{{ style }}">Threshold</span>
                     <input
                         style="width: auto"
                         name="threshold"
@@ -45,7 +45,7 @@
                     <output>{{ threshold }}</output>
                 </label>
                 <label class="block">
-                    Softness&nbsp;
+                    <span style="{{ style }}">Softness</span>
                     <input
                         style="width: auto"
                         name="softness"
