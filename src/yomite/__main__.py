@@ -6,6 +6,7 @@ import webbrowser
 import os
 import traceback
 import logging
+import numpy as np
 from PIL import Image, ImageGrab, ImageOps
 from flask import Flask, render_template, send_file, make_response, request
 from werkzeug.serving import make_server
@@ -31,9 +32,35 @@ text = ""
 
 # settings
 invert = True
-threshold = 150
+threshold = 128
+softness = 16
 
 app = Flask(__name__)
+
+def soft_threshold(image, threshold=128, softness=20):
+    """
+    Soft threshold with feathered edges.
+    'softness' controls how wide the transition zone is.
+    """
+    gray = image.convert("L")
+    arr = np.array(gray, dtype=np.float32)
+
+    # Normalize to 0–1
+    arr /= 255.0
+
+    # Map to 0–1 with sigmoid-like softness
+    t = threshold / 255.0
+    s = softness / 255.0
+    # Smoothstep function for smooth transition
+    if softness == 0:
+        # hard threshold (no division by zero)
+        feathered = (arr > t).astype(np.float32)
+    else:
+        feathered = np.clip((arr - (t - s)) / (2 * s), 0, 1)
+
+    # Convert back to 0–255 grayscale
+    result = Image.fromarray((feathered * 255).astype(np.uint8))
+    return result
 
 def grab():
     global image
@@ -55,7 +82,7 @@ def grab():
     # https://stackoverflow.com/a/50090612
     fn = lambda x : 255 if x > threshold else 0
     global adjusted
-    adjusted = image.convert("L").point(fn, mode="1")
+    adjusted = soft_threshold(image, threshold=threshold, softness=softness)
     if invert:
         adjusted = ImageOps.invert(adjusted)
 
@@ -90,7 +117,8 @@ def get_index():
         "index.html.jinja",
         grab=text,
         invert=invert,
-        threshold=threshold
+        threshold=threshold,
+        softness=softness
     )
 
 def image_response(image):
@@ -128,10 +156,16 @@ def get_text():
 
 @app.route("/settings", methods=["POST"])
 def post_settings():
-    global invert, threshold
+    global invert, threshold, softness
     invert = request.form.get("invert") == "on"
+    def process_slider(name):
+        return max(0, min(int(request.form.get(name)), 255))
     try:
-        threshold = max(0, min(int(request.form.get("threshold")), 255))
+        threshold = process_slider("threshold")
+    except:
+        pass
+    try:
+        softness = process_slider("softness")
     except:
         pass
     return ('', 204)
@@ -141,7 +175,9 @@ def main():
     logging.getLogger("werkzeug").setLevel(logging.WARNING)
     server = make_server("127.0.0.1", 0, app)
     port = server.socket.getsockname()[1]
-    webbrowser.open(f"http://localhost:{port}", new=0)
+    url = f"http://localhost:{port}"
+    webbrowser.open(url, new=0)
+    print(f"Starting server at {url}")
     server.serve_forever()
 
 if __name__ == "__main__":

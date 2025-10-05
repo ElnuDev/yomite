@@ -22,7 +22,7 @@
             </summary>
             <p>Ensure that the text in the second adjusted image is clearly legible without any background silhouettes visible. Text should be black on white.</p>
             <form hx-post="/settings" hx-trigger="input" hx-swap="none">
-                <label>
+                <label class="block">
                     Invert?
                     <input
                         name="invert"
@@ -31,7 +31,7 @@
                         autocomplete="off"
                         {%- if invert %} checked{% endif %}>
                 </label>
-                <label>
+                <label class="block">
                     Threshold&nbsp;
                     <input
                         style="width: auto"
@@ -43,6 +43,19 @@
                         oninput="this.nextElementSibling.value = this.value"
                         autocomplete="off">
                     <output>{{ threshold }}</output>
+                </label>
+                <label class="block">
+                    Softness&nbsp;
+                    <input
+                        style="width: auto"
+                        name="softness"
+                        type="range"
+                        min="0"
+                        max="255"
+                        value="{{ softness }}"
+                        oninput="this.nextElementSibling.value = this.value"
+                        autocomplete="off">
+                    <output>{{ softness }}</output>
                 </label>
             </form>
             <img src="/image" alt="grabbed image" id="grabbed" class="block margin-inline:auto">
