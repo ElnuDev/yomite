@@ -20,7 +20,8 @@ function refresh() {
                 if (container.innerText != grab) {
                     container.innerText = grab;
                 }
-            }));
+            }))
+            .catch(() => window.close());
 }
 setInterval(() => {
     if (autoRefresh.checked) refresh();
