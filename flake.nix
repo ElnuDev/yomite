@@ -62,6 +62,11 @@
           )
       );
 
+      # Runtime dependencies
+      deps = pkgs: with pkgs; [
+        slurp # screen area selector
+        tesseract # OCR
+      ];
     in
     {
       devShells = forAllSystems (
@@ -78,11 +83,7 @@
               virtualenv
               uv
               tokei # Line counting
-
-              # Runtime dependencies
-              slurp # screen area selector
-              tesseract # OCR
-            ];
+            ] ++ deps pkgs;
             env = {
               UV_NO_SYNC = "1";
               UV_PYTHON = pythonSet.python.interpreter;
@@ -96,8 +97,18 @@
         }
       );
 
-      packages = forAllSystems (system: {
-        default = pythonSets.${system}.mkVirtualEnv "yomite-env" workspace.deps.default;
+      packages = forAllSystems (system: let
+        pythonSet = pythonSets.${system};
+        pkgs = nixpkgs.legacyPackages.${system};
+        inherit (pkgs.callPackages pyproject-nix.build.util { }) mkApplication;
+
+        venv = pythonSets.${system}.mkVirtualEnv "yomite-env" workspace.deps.default;
+      in {
+        inherit venv;
+        default = mkApplication {
+          inherit venv;
+          package = pythonSet.yomite;
+        };
       });
     };
 }
