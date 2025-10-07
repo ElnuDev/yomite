@@ -6,20 +6,37 @@
     <meta name="darkreader-lock">
     <title>yomite</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='missing.css') }}">
+    <style>.icon { width: 1em; aspect-ratio: 1 }</style>
     <script src="{{ url_for('static', filename='htmx.min.js') }}"></script>
 </head>
 <body>
     <main>
-        <details style="background: none; border: none; padding: 0">
-            <summary style="user-select: none">
+        <div style="position: relative; z-index: 1">
+            <button class="iconbutton bad" style="position: absolute; right: 0" hx-post="/exit" hx-swap="none" title="Exit">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9" />
+                </svg>
+            </button>
+            <button class="iconbutton info" style="position: absolute; right: 2em" id="reselectArea" title="Reselect area">
+                <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <!-- Top-left corner -->
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 9 V6.75A2.75 2.75 0 0 1 6.75 4H9" />
+                    <!-- Top-right corner -->
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 4h2.25A2.75 2.75 0 0 1 20 6.75V9" />
+                    <!-- Bottom-right corner -->
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 15v2.25A2.75 2.75 0 0 1 17.25 20H15" />
+                    <!-- Bottom-left corner -->
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 20H6.75A2.75 2.75 0 0 1 4 17.25V15" />
+                </svg>
+            </button>
+            <label style="display: inline-flex; position: absolute; right: 6em; --gap: 0.5em">
+                Live?
+                <input id="autoRefresh" role="switch" type="checkbox" autocomplete="off" checked>
+            </label>
+        </div>
+        <details style="background: none; border: none; padding: 0; margin-top: 0">
+            <summary style="user-select: none; position: relative; overflow-y: auto">
                 Settings
-                <button hx-post="/exit" hx-swap="none" class="float:right">Exit</button>
-                <button id="reselectArea" class="float:right">Reselect area</button>
-                <label style="display: inline-flex; float: right">
-                    Live?
-                    <input id="autoRefresh" role="switch" type="checkbox" autocomplete="off" checked>
-                    &nbsp;
-                </label>
             </summary>
             <p>Ensure that the text in the second adjusted image is clearly legible without any background silhouettes visible. Text should be black on white.</p>
             <form hx-post="/settings" hx-trigger="input" hx-swap="none">
@@ -59,8 +76,8 @@
                     <output>{{ softness }}</output>
                 </label>
             </form>
-            <img src="/image" alt="grabbed image" id="grabbed" class="block margin-inline:auto">
-            <img src="/adjusted" alt="adjusted image" id="adjusted" class="block margin-inline:auto">
+            <img src="/image" alt="grabbed image" id="grabbed" class="block margin-inline:auto margin-block-start border">
+            <img src="/adjusted" alt="adjusted image" id="adjusted" class="block margin-inline:auto margin-block-start border">
             <hr>
         </details>
         <div id="grab">{{ grab }}</div>
