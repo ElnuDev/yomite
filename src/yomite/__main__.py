@@ -170,6 +170,10 @@ def post_settings():
         pass
     return ('', 204)
 
+@app.route("/exit", methods=["POST"])
+def post_exit():
+    os._exit(1)
+
 def main():
     start_grab_thread()
     logging.getLogger("werkzeug").setLevel(logging.WARNING)
