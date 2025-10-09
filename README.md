@@ -24,7 +24,7 @@ You can then clone the repository.
 git clone https://github.com/ElnuDev/yomite.git
 cd yomite
 pip install -r requirements.txt
-python src
+python .
 ```
 
 ## License

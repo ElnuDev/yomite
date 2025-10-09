@@ -53,6 +53,8 @@ rec {
           ]);
 
           preBuild = ''
+            mkdir -p src
+            mv -t src *.py static templates
             echo -e "from setuptools import setup\nsetup(scripts=['src/__main__.py'])" > setup.py
           '';
 
@@ -68,8 +70,8 @@ rec {
           in ''
             pushd $out/bin
             mv __main__.py yomite
-            cp -r ${./src/static} static
-            cp -r ${./src/templates} templates
+            cp -r ${./static} static
+            cp -r ${./templates} templates
             popd
 
             mkdir -p $out/share/applications
