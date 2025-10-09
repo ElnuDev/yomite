@@ -17,15 +17,13 @@ function refresh() {
         .then(response => response
             .text()
             .then(grab => {
-                if (container.innerText != grab) {
+                if (autoRefresh.checked && container.innerText != grab) {
                     container.innerText = grab;
                 }
             }))
             .catch(() => window.close());
 }
-setInterval(() => {
-    if (autoRefresh.checked) refresh();
-}, 250);
+setInterval(refresh, 250);
 
 const reselectArea = document.getElementById("reselectArea");
 reselectArea.addEventListener("click", () => {
