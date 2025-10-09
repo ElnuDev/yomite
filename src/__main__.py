@@ -8,6 +8,7 @@ import webbrowser
 import os
 import traceback
 import logging
+import time
 import numpy as np
 from PIL import Image, ImageGrab, ImageOps
 from flask import Flask, render_template, send_file, make_response, request
@@ -100,8 +101,13 @@ def grab():
         "`", "「"
     )
 
+last_request = time.time()
 def grab_thread():
+    TIMEOUT = 5
     while True:
+        if time.time() - last_request > TIMEOUT:
+            print(f"No requests in last {TIMEOUT} seconds, exiting...")
+            os._exit(0)
         try:
             grab()
         except:
@@ -154,6 +160,8 @@ def get_reselect_area():
 
 @app.route("/text")
 def get_text():
+    global last_request
+    last_request = time.time()
     return text
 
 @app.route("/settings", methods=["POST"])
