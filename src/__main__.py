@@ -107,7 +107,7 @@ def grab():
 
 last_request = time.time()
 def grab_thread():
-    TIMEOUT = 5
+    TIMEOUT = 30
     while True:
         if time.time() - last_request > TIMEOUT:
             print(f"No requests in last {TIMEOUT} seconds, exiting...")
