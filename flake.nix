@@ -1,113 +1,87 @@
-{
+rec {
   description = "Local OCR helper, primarily intended for reading visual novels in Japanese.";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-
-    pyproject-nix = {
-      url = "github:pyproject-nix/pyproject.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    uv2nix = {
-      url = "github:pyproject-nix/uv2nix";
-      inputs.pyproject-nix.follows = "pyproject-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    pyproject-build-systems = {
-      url = "github:pyproject-nix/build-system-pkgs";
-      inputs.pyproject-nix.follows = "pyproject-nix";
-      inputs.uv2nix.follows = "uv2nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
-    {
-      nixpkgs,
-      pyproject-nix,
-      uv2nix,
-      pyproject-build-systems,
-      ...
-    }:
+    { self, nixpkgs, ... }:
     let
       inherit (nixpkgs) lib;
       forAllSystems = lib.genAttrs lib.systems.flakeExposed;
-
-      workspace = uv2nix.lib.workspace.loadWorkspace { workspaceRoot = ./.; };
-
-      overlay = workspace.mkPyprojectOverlay {
-        sourcePreference = "wheel";
-      };
-
-      editableOverlay = workspace.mkEditablePyprojectOverlay {
-        root = "$REPO_ROOT";
-      };
-
-      pythonSets = forAllSystems (
-        system:
-        let
-          pkgs = nixpkgs.legacyPackages.${system};
-          python = pkgs.python3;
-        in
-        (pkgs.callPackage pyproject-nix.build.packages {
-          inherit python;
-        }).overrideScope
-          (
-            lib.composeManyExtensions [
-              pyproject-build-systems.overlays.wheel
-              overlay
-            ]
-          )
-      );
-
-      # Runtime dependencies
-      deps = pkgs: with pkgs; [
-        slurp # screen area selector
-        tesseract # OCR
-      ];
     in
     {
       devShells = forAllSystems (
         system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          pythonSet = pythonSets.${system}.overrideScope editableOverlay;
-          virtualenv = pythonSet.mkVirtualEnv "yomite-dev-env" workspace.deps.all;
         in
         {
           default = pkgs.mkShell {
             packages = with pkgs; [
-              # Dev dependencies
               virtualenv
-              uv
               tokei # Line counting
-            ] ++ deps pkgs;
-            env = {
-              UV_NO_SYNC = "1";
-              UV_PYTHON = pythonSet.python.interpreter;
-              UV_PYTHON_DOWNLOADS = "never";
-            };
-            shellHook = ''
-              unset PYTHONPATH
-              export REPO_ROOT=$(git rev-parse --show-toplevel)
-            '';
+            ];
+            inputsFrom = with self.packages.${system}; [ yomite ];
           };
         }
       );
 
       packages = forAllSystems (system: let
-        pythonSet = pythonSets.${system};
         pkgs = nixpkgs.legacyPackages.${system};
-        inherit (pkgs.callPackages pyproject-nix.build.util { }) mkApplication;
-
-        venv = pythonSets.${system}.mkVirtualEnv "yomite-env" workspace.deps.default;
       in {
-        inherit venv;
-        default = mkApplication {
-          inherit venv;
-          package = pythonSet.yomite;
+        default = self.packages.${system}.yomite;
+        yomite = pkgs.python3.pkgs.buildPythonApplication {
+          pname = "yomite";
+          version = "0.1.0";
+          pyproject = true;
+          build-system = with pkgs.python3.pkgs; [ setuptools ];
+
+          src = ./.;
+
+          propagatedBuildInputs = with pkgs.python3.pkgs; [
+            flask
+            numpy
+            pillow
+            pytesseract
+          ] ++ (with pkgs; [
+            slurp # screen area selector
+            tesseract # OCR
+          ]);
+
+          preBuild = ''
+            echo -e "from setuptools import setup\nsetup(scripts=['src/__main__.py'])" > setup.py
+          '';
+
+          postInstall = let
+            desktop = pkgs.makeDesktopItem {
+              name = "yomite";
+              genericName = "OCR helper";
+              desktopName = "yomite";
+              exec = "yomite";
+              icon = "book";
+              comment = description;
+            };
+          in ''
+            pushd $out/bin
+            mv __main__.py yomite
+            cp -r ${./src/static} static
+            cp -r ${./src/templates} templates
+            popd
+
+            mkdir -p $out/share/applications
+            cp ${desktop}/share/applications/* $out/share/applications
+          '';
+
+          meta = with lib; {
+            description = description;
+            homepage = "https://github.com/ElnuDev/yomite";
+            license = licenses.gpl3Only;
+            mainProgram = "yomite";
+            maintainers = with maintainers; [ elnudev ];
+            platforms = lib.platforms.linux;
+          };
         };
       });
     };

@@ -1,2 +1,2 @@
-src/yomite/static/missing.css linguist-vendored
-src/yomite/static/htmx.min.js linguist-vendored
+src/static/missing.css linguist-vendored
+src/static/htmx.min.js linguist-vendored
