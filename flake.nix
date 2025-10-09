@@ -46,8 +46,10 @@ rec {
             pillow
             pytesseract
           ] ++ (with pkgs; [
-            slurp # screen area selector
             tesseract # OCR
+            # screen area selection
+            slurp # Wayland
+            slop # X11
           ]);
 
           preBuild = ''
