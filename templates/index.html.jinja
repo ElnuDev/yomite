@@ -74,7 +74,23 @@
                         autocomplete="off">
                     <output>{{ softness }}</output>
                 </label>
+                <br>
+                <label class="block">
+                    <span style="{{ style }}">Offset X</span>
+                    <input type="number" name="offsetX" value="{{ offset_x }}" autocomplete="off">
+                </label>
+                <label class="block">
+                    <span style="{{ style }}">Offset Y</span>
+                    <input type="number" name="offsetY" value="{{ offset_y }}" autocomplete="off">
+                </label>
             </form>
+            <details style="background: none; border: none; padding: 0; margin-top: 0">
+                <summary>?</summary>
+                <small>
+                    On some systems (e.g. with Hyprland) if a monitor declared in your configuration is disconnected, screenshots may be offset.
+                    Try adding or subtracting monitor widths from the offset until the screenshot preview is aligned with where you selected.
+                </small>
+            </details>
             <img src="/image" alt="grabbed image" id="grabbed" class="block margin-inline:auto margin-block-start border">
             <img src="/adjusted" alt="adjusted image" id="adjusted" class="block margin-inline:auto margin-block-start border">
             <hr>

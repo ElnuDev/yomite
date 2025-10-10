@@ -25,10 +25,13 @@ def get_area():
         _bbox = utils.get_area()
 
 def get_bbox():
-    if hypr.is_hypr:
-        return hypr.get_bbox()
-    else:
-        return _bbox
+    bbox = hypr.get_bbox() if hypr.is_hypr else _bbox
+    return (
+        bbox[0] - offset[0],
+        bbox[1] - offset[1],
+        bbox[2] - offset[0],
+        bbox[3] - offset[1]
+    )
 
 # bbox format for PIL.ImageGrab.grab
 # Only used if not hypr
@@ -36,6 +39,7 @@ _bbox = None
 
 image = None
 adjusted = None
+offset = (0, 0)
 text = ""
 
 # settings
@@ -118,7 +122,9 @@ def get_index():
         grab=text,
         invert=invert,
         threshold=threshold,
-        softness=softness
+        softness=softness,
+        offset_x=offset[0],
+        offset_y=offset[1],
     )
 
 def image_response(image):
@@ -158,8 +164,17 @@ def get_text():
 
 @app.route("/settings", methods=["POST"])
 def post_settings():
-    global invert, threshold, softness
+    global invert, threshold, softness, offset
     invert = request.form.get("invert") == "on"
+    try:
+        offset_x = int(request.form.get("offsetX"))
+    except:
+        offset_x = offset[0]
+    try:
+        offset_y = int(request.form.get("offsetY"))
+    except:
+        offset_y = offset[1]
+    offset = (offset_x, offset_y)
     def process_slider(name):
         return max(0, min(int(request.form.get(name)), 255))
     try:
