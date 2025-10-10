@@ -14,24 +14,25 @@ from PIL import Image, ImageGrab, ImageOps
 from flask import Flask, render_template, send_file, make_response, request
 from werkzeug.serving import make_server
 
-def get_area():
-    global area, bbox
-    slop = os.environ["XDG_SESSION_TYPE"] == "x11"
-    area = subprocess.check_output(["slop" if slop else "slurp"]).decode().strip()
-    if slop:
-        dim_str, x_str, y_str = area.split('+')
-    else:
-        pos_str, dim_str = area.split()
-        x_str, y_str = pos_str.split(',')
-    x, y = int(x_str), int(y_str)
-    w_str, h_str = dim_str.split('x')
-    w, h = int(w_str), int(h_str)
-    bbox = (x, y, x + w, y + h)
+import utils
+import hypr
 
-# raw area output from slurp
-area = None
+def get_area():
+    if hypr.is_hypr:
+        hypr.get_area()
+    else:
+        global _bbox
+        _bbox = utils.get_area()
+
+def get_bbox():
+    if hypr.is_hypr:
+        return hypr.get_bbox()
+    else:
+        return _bbox
+
 # bbox format for PIL.ImageGrab.grab
-bbox = None
+# Only used if not hypr
+_bbox = None
 
 image = None
 adjusted = None
@@ -71,20 +72,7 @@ def soft_threshold(image, threshold=128, softness=20):
 
 def grab():
     global image
-    try:
-        image = ImageGrab.grab(bbox=bbox)
-    except:
-        # PIL may fail on Wayland, fall back to grim
-        # user must install grim manually
-        TEMP = "/tmp/yomite-grab.png"
-        try:
-            print(["grim", "-g", area, "-l", "0", TEMP])
-            subprocess.run(["grim", "-g", area, "-l", "0", TEMP])
-            image = Image.open(TEMP)
-        except:
-            traceback.print_exc()
-        finally:
-            os.remove(TEMP)
+    image = ImageGrab.grab(bbox=get_bbox())
 
     # https://stackoverflow.com/a/50090612
     fn = lambda x : 255 if x > threshold else 0
