@@ -1,13 +1,10 @@
+import os
 import subprocess
 from collections import OrderedDict
 
 import utils
 
-is_hypr = True
-try:
-    subprocess.run(["hyprctl", "version"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-except:
-    is_hypr = False
+is_hypr = "HYPRLAND_INSTANCE_SIGNATURE" in os.environ
 
 class Window:
     id = None
